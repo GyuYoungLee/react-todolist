@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      class App extends React.Component {
+        state = this.load();
+        
+        load() {
+          let output;
+          try {
+            output = JSON.parse(localStorage.state);
+          } catch (e) {}
+
+          if (output !== undefined && output.keyCount !== undefined && output.currentValue !== undefined) return output;
+          else return { keyCount: 0, currentValue: "", todos: [] };
+        }
+
+        componentDidUpdate() {
+          localStorage.state = JSON.stringify(this.state);
+        }
+
+        textChange = (evt) => {
+          this.setState({
+            currentValue: evt.target.value,
+          });
+        };
+
+        // 추가하기 버튼 클릭
+        addTodo = () => {
+          const { keyCount, currentValue, todos } = this.state;
+          if (currentValue.trim() === "") return;
+          this.setState({
+            todos: [...todos, { key: keyCount, text: currentValue, isDone: false }],
+            keyCount: keyCount + 1,
+            currentValue: "",
+          });
+        };
+
+        // 엔터 키 입력
+        textKeyUp = (evt) => {
+          const ENTER = 13;
+          if (evt.keyCode === ENTER) {
+            this.addTodo();
+          }
+        };
+
+        // 체크박스 클릭
+        changeCheckDone = (evt, dataKey) => {
+          const newTodos = [...this.state.todos]; // shallow copy
+          const [todo] = newTodos.filter((todo) => todo.key === dataKey);
+          todo.isDone = evt.target.checked ? true : false;
+          this.setState({
+            todos: newTodos,
+          });
+        };
+
+        // 제거하기 버튼 클릭
+        removeTodo = (dataKey) => {
+          this.setState({
+            todos: this.state.todos.filter((todo) => todo.key !== dataKey),
+          });
+        };
+
+        render() {
+          return (
+            <div style={{ padding: 20 }}>
+              <h1>
+                Todo List <small>(react)</small>
+              </h1>
+              <input onChange={this.textChange} value={this.state.currentValue} onKeyUp={this.textKeyUp} />
+              <button style={{ marginLeft: 10 }} onClick={this.addTodo}>
+                추가하기
+              </button>
+              <div style={{ margin: "20px 0px" }}>
+                {this.state.todos.map((todo) => (
+                  <TodoItem
+                    key={todo.key}
+                    dataKey={todo.key}
+                    text={todo.text}
+                    isDone={todo.isDone}
+                    changeCheckDone={this.changeCheckDone}
+                    removeTodo={this.removeTodo}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        }
+      }
+
+      class TodoItem extends React.Component {
+        render() {
+          const { dataKey, text, isDone, changeCheckDone, removeTodo } = this.props;
+          return (
+            <div>
+              <input type="checkbox" onChange={(evt) => changeCheckDone(evt, dataKey)} />
+              <span style={{ textDecoration: isDone ? "line-through" : "" }}>{text}</span>
+              <button style={{ margin: "5px 10px" }} onClick={() => removeTodo(dataKey)}>
+                제거하기
+              </button>
+            </div>
+          );
+        }
+      }
+
+      const container = document.getElementById("root");
+      ReactDOM.render(<App />, container);
+    </script>
+  </body>
+</html>
